@@ -1,0 +1,36 @@
+name: Enterprise CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install Dependencies
+      run: npm ci
+      
+    - name: Run Vitest (Unit & API)
+      run: npx vitest run --coverage
+      
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+      
+    - name: Run Playwright (E2E)
+      run: npx playwright test
+      
+    - name: Enforce 90% Coverage
+      # This step ensures the PR fails if coverage drops below 90%
+      run: npx check-coverage --lines 90 --functions 90 --branches 90

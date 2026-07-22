@@ -1,0 +1,83 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: 1. Run Tests & Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx vitest run --coverage
+      - run: npx playwright test
+
+  migrate_database:
+    name: 2. Supabase Migrations
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Push Migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+  deploy_frontend:
+    name: 3. Deploy to Vercel
+    needs: migrate_database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to Vercel Production
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+
+  deploy_workers:
+    name: 4. Deploy Render Background Workers
+    needs: migrate_database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+  notify:
+    name: 5. Health Check & Notifications
+    needs: [deploy_frontend, deploy_workers]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify API Health
+        run: |
+          sleep 30 # Give Vercel a moment to spin up
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" https://your-production-url.com/api/health)
+          if [ $HTTP_STATUS -ne 200 ]; then
+            echo "Health check failed!"
+            exit 1
+          fi
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              text: "✅ Production Deployment Successful! The latest Question Bank version is now live."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
