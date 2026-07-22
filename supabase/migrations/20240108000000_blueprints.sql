@@ -3,7 +3,7 @@
 -- ==============================================================================
 
 CREATE TABLE public.blueprints (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     exam_id UUID NOT NULL, -- Logical link, no strict FK yet for flexibility, or reference exams table if exists
     subject_id UUID NOT NULL,

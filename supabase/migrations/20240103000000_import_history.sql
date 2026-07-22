@@ -3,7 +3,7 @@
 -- ==============================================================================
 
 CREATE TABLE public.import_sessions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     file_name TEXT,
     total_items INT DEFAULT 0,
@@ -14,7 +14,7 @@ CREATE TABLE public.import_sessions (
 );
 
 CREATE TABLE public.import_errors (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     session_id UUID REFERENCES public.import_sessions(id) ON DELETE CASCADE,
     row_number INT,
     raw_data JSONB,
@@ -36,7 +36,7 @@ ALTER TABLE public.import_errors ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own import sessions"
 ON public.import_sessions FOR SELECT
 TO authenticated
-USING ( user_id = auth.uid() OR exists (select 1 from public.users where id = auth.uid() and role in ('super_admin', 'admin')) );
+USING ( user_id = auth.uid() OR exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name in ('Super Admin', 'Admin')) );
 
 CREATE POLICY "Users can view their own import errors"
 ON public.import_errors FOR SELECT
@@ -44,6 +44,6 @@ TO authenticated
 USING ( 
     exists (
         select 1 from public.import_sessions s 
-        where s.id = session_id and (s.user_id = auth.uid() OR exists (select 1 from public.users where id = auth.uid() and role in ('super_admin', 'admin')))
+        where s.id = session_id and (s.user_id = auth.uid() OR exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name in ('Super Admin', 'Admin')))
     )
 );

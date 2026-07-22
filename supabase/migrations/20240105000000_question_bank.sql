@@ -3,7 +3,7 @@
 -- ==============================================================================
 
 -- 1. Insert Question Types
-INSERT INTO public.question_types (name, description) VALUES
+INSERT INTO public.question_types (code, name) VALUES
 ('MCQ', 'Multiple Choice Question (Single Correct)'),
 ('MSQ', 'Multiple Select Question (Multiple Correct)'),
 ('Integer', 'Integer Type Answer'),
@@ -12,7 +12,7 @@ INSERT INTO public.question_types (name, description) VALUES
 ('Subjective', 'Long form subjective answer'),
 ('Case Study', 'Case study based question'),
 ('Paragraph', 'Paragraph comprehension')
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (code) DO NOTHING;
 
 -- 2. Expand Questions Table Metadata
 ALTER TABLE public.questions
@@ -37,7 +37,7 @@ BEGIN
             NEW.id,
             COALESCE((SELECT MAX(version_number) + 1 FROM public.question_versions WHERE question_id = NEW.id), 1),
             row_to_json(OLD),
-            NEW.updated_by
+            NEW.created_by
         );
     END IF;
     RETURN NEW;

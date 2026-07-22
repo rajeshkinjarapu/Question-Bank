@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 2. AUDIT LOGGING SETUP (Triggers)
 CREATE TABLE IF NOT EXISTS public.system_audit_logs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     table_name TEXT NOT NULL,
     record_id UUID NOT NULL,
     action TEXT NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'SOFT_DELETE')),
@@ -54,7 +54,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 3. TAXONOMY & METADATA TABLES
 CREATE TABLE public.exams (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -63,7 +63,7 @@ CREATE TABLE public.exams (
 );
 
 CREATE TABLE public.subjects (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     exam_id UUID REFERENCES public.exams(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -72,7 +72,7 @@ CREATE TABLE public.subjects (
 );
 
 CREATE TABLE public.chapters (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     chapter_order INT DEFAULT 0,
@@ -82,7 +82,7 @@ CREATE TABLE public.chapters (
 );
 
 CREATE TABLE public.topics (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     chapter_id UUID REFERENCES public.chapters(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     topic_order INT DEFAULT 0,
@@ -93,31 +93,31 @@ CREATE TABLE public.topics (
 
 -- Core Enums/Lookups
 CREATE TABLE public.question_types (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     code TEXT NOT NULL UNIQUE, -- e.g., 'MCQ', 'MSQ', 'NUMERICAL', 'SUBJECTIVE'
     name TEXT NOT NULL
 );
 
 CREATE TABLE public.difficulty_levels (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     level INT NOT NULL UNIQUE,
     name TEXT NOT NULL -- e.g., 'Easy', 'Medium', 'Hard'
 );
 
 CREATE TABLE public.languages (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     code TEXT NOT NULL UNIQUE, -- e.g., 'en', 'hi', 'te'
     name TEXT NOT NULL
 );
 
 CREATE TABLE public.tags (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
 );
 
 -- 4. CORE QUESTION TABLES
 CREATE TABLE public.questions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     type_id UUID REFERENCES public.question_types(id) NOT NULL,
     difficulty_id UUID REFERENCES public.difficulty_levels(id) NOT NULL,
     language_id UUID REFERENCES public.languages(id) NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE public.question_tags (
 );
 
 CREATE TABLE public.options (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     is_correct BOOLEAN DEFAULT false,
@@ -161,28 +161,28 @@ CREATE TABLE public.options (
 );
 
 CREATE TABLE public.solutions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     video_url TEXT
 );
 
 CREATE TABLE public.question_images (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     alt_text TEXT
 );
 
 CREATE TABLE public.question_formulas (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
     latex_content TEXT NOT NULL
 );
 
 -- 5. VERSIONING & HISTORY
 CREATE TABLE public.question_versions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
     version_number INT NOT NULL,
     snapshot JSONB NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE public.question_versions (
 
 -- 6. EXAM GENERATION
 CREATE TABLE public.generated_papers (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     exam_id UUID REFERENCES public.exams(id),
     title TEXT NOT NULL,
     total_marks NUMERIC(7,2),
@@ -206,7 +206,7 @@ CREATE TABLE public.generated_papers (
 );
 
 CREATE TABLE public.paper_questions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     paper_id UUID REFERENCES public.generated_papers(id) ON DELETE CASCADE,
     question_id UUID REFERENCES public.questions(id),
     section_name TEXT,
@@ -217,7 +217,7 @@ CREATE TABLE public.paper_questions (
 );
 
 CREATE TABLE public.answer_keys (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     paper_id UUID REFERENCES public.generated_papers(id) ON DELETE CASCADE UNIQUE,
     key_data JSONB NOT NULL, -- structured mapping of paper questions to correct option IDs
     created_at TIMESTAMPTZ DEFAULT NOW()

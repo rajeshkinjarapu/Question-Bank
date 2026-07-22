@@ -42,7 +42,7 @@ USING (
     bucket_id = 'private-exports' 
     AND (
         auth.uid() = owner
-        OR exists (select 1 from public.users where id = auth.uid() and role in ('super_admin', 'admin'))
+        OR exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name in ('Super Admin', 'Admin'))
     )
 );
 
@@ -60,9 +60,9 @@ ON storage.objects FOR ALL
 TO authenticated
 USING ( 
     bucket_id = 'system-backups' 
-    AND exists (select 1 from public.users where id = auth.uid() and role = 'super_admin')
+    AND exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name = 'Super Admin')
 )
 WITH CHECK ( 
     bucket_id = 'system-backups' 
-    AND exists (select 1 from public.users where id = auth.uid() and role = 'super_admin')
+    AND exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name = 'Super Admin')
 );

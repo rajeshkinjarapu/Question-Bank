@@ -9,8 +9,6 @@ INSERT INTO storage.buckets (id, name, public) VALUES
   ('user-uploads', 'user-uploads', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 2. Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 -- 3. Policies for 'question-diagrams' (Public Read, Authenticated Write)
 CREATE POLICY "Public Read Access for Question Diagrams"
@@ -41,7 +39,7 @@ ON storage.objects FOR SELECT
 TO authenticated
 USING ( 
   bucket_id = 'generated-papers' AND 
-  (owner = auth.uid() OR exists (select 1 from public.users where id = auth.uid() and role in ('super_admin', 'admin')))
+  (owner = auth.uid() OR exists (select 1 from public.user_roles ur join public.roles r on ur.role_id = r.id where ur.user_id = auth.uid() and r.name in ('Super Admin', 'Admin')))
 );
 
 CREATE POLICY "Users can upload Generated Papers"

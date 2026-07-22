@@ -5,7 +5,7 @@
 -- 1. Jobs Queue Table
 -- Used by external workers (Render, BullMQ) or Supabase Edge Functions to track async progress
 CREATE TABLE public.jobs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     type VARCHAR(50) NOT NULL, -- 'bulk_ai_correction', 'bulk_move_chapter', 'translate', etc.
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
     progress INT DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
@@ -22,7 +22,7 @@ CREATE INDEX idx_jobs_status ON public.jobs (status) WHERE status = 'pending';
 -- 2. Bulk Operation Logs
 -- Exists specifically to provide a 1-click "Undo" button for massive DB updates
 CREATE TABLE public.bulk_operation_logs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
     affected_ids UUID[] NOT NULL,
     previous_state JSONB NOT NULL, -- Array of the exact rows BEFORE the bulk update happened

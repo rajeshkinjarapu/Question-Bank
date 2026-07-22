@@ -21,11 +21,11 @@ CREATE INDEX IF NOT EXISTS questions_fts_idx ON public.questions USING GIN (fts)
 
 -- Composite Index for frequent exact-match filters to prevent sequential scans
 CREATE INDEX idx_questions_filters_composite ON public.questions 
-(exam_id, subject_id, chapter_id, difficulty_id, type_id, status);
+(exam_id, difficulty_id, type_id, status);
 
 -- 3. Saved Filters Table
 CREATE TABLE public.saved_filters (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     filter_json JSONB NOT NULL,
@@ -36,7 +36,7 @@ CREATE POLICY "Users manage own filters" ON public.saved_filters FOR ALL USING (
 
 -- 4. Search History Table
 CREATE TABLE public.search_history (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     query TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
